@@ -433,6 +433,10 @@ pub struct DateCellData {
   #[serde(default)]
   pub is_range: bool,
   pub reminder_id: String,
+  #[serde(default)]
+  pub repeat_type: i32,
+  #[serde(default)]
+  pub repeat_rule_json: String,
 }
 impl TypeOptionCellData for DateCellData {
   fn is_cell_empty(&self) -> bool {
@@ -448,6 +452,8 @@ impl DateCellData {
       include_time,
       is_range,
       reminder_id,
+      repeat_type: 0,
+      repeat_rule_json: String::new(),
     }
   }
 
@@ -458,6 +464,8 @@ impl DateCellData {
       include_time: false,
       is_range: false,
       reminder_id: String::new(),
+      repeat_type: 0,
+      repeat_rule_json: String::new(),
     }
   }
 
@@ -477,6 +485,10 @@ impl From<&Cell> for DateCellData {
     let include_time: bool = cell.get_as("include_time").unwrap_or_default();
     let is_range: bool = cell.get_as("is_range").unwrap_or_default();
     let reminder_id: String = cell.get_as("reminder_id").unwrap_or_default();
+    let repeat_type: i32 = cell
+      .get_as::<i64>("repeat_type")
+      .unwrap_or_default() as i32;
+    let repeat_rule_json: String = cell.get_as("repeat_rule_json").unwrap_or_default();
 
     Self {
       timestamp,
@@ -484,6 +496,8 @@ impl From<&Cell> for DateCellData {
       include_time,
       is_range,
       reminder_id,
+      repeat_type,
+      repeat_rule_json,
     }
   }
 }
@@ -508,6 +522,11 @@ impl From<&DateCellData> for Cell {
     cell.insert(
       "reminder_id".into(),
       cell_data.reminder_id.to_owned().into(),
+    );
+    cell.insert("repeat_type".into(), (cell_data.repeat_type as i64).into());
+    cell.insert(
+      "repeat_rule_json".into(),
+      cell_data.repeat_rule_json.to_owned().into(),
     );
     cell
   }
@@ -536,6 +555,8 @@ impl<'de> serde::Deserialize<'de> for DateCellData {
           include_time: false,
           is_range: false,
           reminder_id: String::new(),
+          repeat_type: 0,
+          repeat_rule_json: String::new(),
         })
       }
 
@@ -555,6 +576,8 @@ impl<'de> serde::Deserialize<'de> for DateCellData {
         let mut include_time: Option<bool> = None;
         let mut is_range: Option<bool> = None;
         let mut reminder_id: Option<String> = None;
+        let mut repeat_type: Option<i32> = None;
+        let mut repeat_rule_json: Option<String> = None;
 
         while let Some(key) = map.next_key::<String>()? {
           match key.as_str() {
@@ -573,6 +596,12 @@ impl<'de> serde::Deserialize<'de> for DateCellData {
             "reminder_id" => {
               reminder_id = map.next_value().ok();
             },
+            "repeat_type" => {
+              repeat_type = parse_optional_number(&mut map)?.map(|v| v as i32);
+            },
+            "repeat_rule_json" => {
+              repeat_rule_json = map.next_value().ok();
+            },
             _ => {
               let _: serde_json::Value = map.next_value()?; // Ignore unknown keys
             },
@@ -585,6 +614,8 @@ impl<'de> serde::Deserialize<'de> for DateCellData {
           include_time: include_time.unwrap_or_default(),
           is_range: is_range.unwrap_or_default(),
           reminder_id: reminder_id.unwrap_or_default(),
+          repeat_type: repeat_type.unwrap_or_default(),
+          repeat_rule_json: repeat_rule_json.unwrap_or_default(),
         })
       }
     }
@@ -651,6 +682,8 @@ mod tests {
       include_time: true,
       is_range: true,
       reminder_id: "reminder123".to_string(),
+      repeat_type: 0,
+      repeat_rule_json: String::new(),
     };
 
     let cell = Cell::from(&date_cell_data);
