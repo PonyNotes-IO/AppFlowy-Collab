@@ -51,6 +51,7 @@ impl Folder {
             trash.push(SectionItem {
               id: record.id,
               timestamp: record.created_at,
+              is_favorite: false,
             });
           }
         }

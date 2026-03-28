@@ -272,6 +272,23 @@ impl Folder {
     move_favorite_view_id
   );
 
+  // Favorites - removes from section without changing is_favorite field
+  pub fn remove_from_favorite_section_only(&mut self, ids: Vec<String>) {
+    let mut txn = self.collab.transact_mut();
+    if let Some(op) = self.body.section.section_op(&txn, Section::Favorite) {
+      op.delete_section_items_with_txn(&mut txn, ids);
+    }
+  }
+
+  // Favorites - adds to section without changing is_favorite field
+  pub fn add_to_favorite_section_only(&mut self, ids: Vec<String>) {
+    let mut txn = self.collab.transact_mut();
+    if let Some(op) = self.body.section.section_op(&txn, Section::Favorite) {
+      let items: Vec<SectionItem> = ids.into_iter().map(SectionItem::new).collect();
+      op.add_sections_item(&mut txn, items);
+    }
+  }
+
   // Recent
   impl_section_op!(
     Section::Recent,
@@ -295,6 +312,17 @@ impl Folder {
     remove_all_my_trash_sections,
     move_trash_view_id
   );
+
+  /// Adds a view to the trash section while preserving its favorite status.
+  /// This is used by the backend to save the is_favorite state before unfavoriting,
+  /// so that it can be restored later when the view is recovered from trash.
+  pub fn add_trash_view_ids_with_favorite(&mut self, view_id: String, is_favorite: bool) {
+    let mut txn = self.collab.transact_mut();
+    if let Some(op) = self.body.section.section_op(&txn, Section::Trash) {
+      let item = SectionItem::new_with_favorite(view_id, is_favorite);
+      op.add_sections_item(&mut txn, vec![item]);
+    }
+  }
 
   // Private
   impl_section_op!(
@@ -322,6 +350,7 @@ impl Folder {
             id: section.id,
             name,
             created_at: section.timestamp,
+            is_favorite: section.is_favorite,
           })
       })
       .collect()

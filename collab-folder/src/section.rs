@@ -306,6 +306,8 @@ pub struct SectionItem {
   pub id: String,
   #[serde(deserialize_with = "deserialize_i64_from_numeric")]
   pub timestamp: i64,
+  #[serde(default)]
+  pub is_favorite: bool,
 }
 
 impl SectionItem {
@@ -313,6 +315,15 @@ impl SectionItem {
     Self {
       id,
       timestamp: timestamp(),
+      is_favorite: false,
+    }
+  }
+
+  pub fn new_with_favorite(id: String, is_favorite: bool) -> Self {
+    Self {
+      id,
+      timestamp: timestamp(),
+      is_favorite,
     }
   }
 }
@@ -329,13 +340,18 @@ impl TryFrom<Any> for SectionItem {
 
 impl From<SectionItem> for HashMap<String, AnyMut> {
   fn from(item: SectionItem) -> Self {
-    HashMap::from([
+    let mut map = HashMap::from([
       ("id".to_string(), AnyMut::String(item.id)),
       (
         "timestamp".to_string(),
         AnyMut::Number(item.timestamp as f64),
       ),
-    ])
+    ]);
+    map.insert(
+      "is_favorite".to_string(),
+      AnyMut::Number(if item.is_favorite { 1.0 } else { 0.0 }),
+    );
+    map
   }
 }
 

@@ -36,6 +36,7 @@ pub struct TrashInfo {
   pub id: String,
   pub name: String,
   pub created_at: i64,
+  pub is_favorite: bool,
 }
 impl AsRef<str> for TrashInfo {
   fn as_ref(&self) -> &str {
