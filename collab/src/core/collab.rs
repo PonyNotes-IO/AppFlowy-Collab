@@ -170,6 +170,10 @@ impl CollabContext {
     self.doc().transact_mut_with(self.origin.clone())
   }
 
+  pub fn transact_mut_with(&mut self, origin: CollabOrigin) -> TransactionMut {
+    self.doc().transact_mut_with(origin)
+  }
+
   pub fn undo(&mut self) -> Result<bool, CollabError> {
     let undo_manager = self.undo_manager_mut()?;
     Ok(undo_manager.undo_blocking())
